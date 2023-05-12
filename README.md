@@ -6,7 +6,7 @@
 ✨ LIVE status updates ✨ multiple deployments ✨ active polling ✨
 </p>
 
-![netlify-v3](screenshot.png)
+![netlify-v3](https://raw.githubusercontent.com/jclusso/sanity-plugin-netlify/master/screenshot.png)
 
 <br />
 
