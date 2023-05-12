@@ -1,24 +1,24 @@
 {
-  "name": "sanity-plugin-vercel-deploy",
-  "version": "3.3.3",
-  "description": "Trigger Vercel Deploy Hooks from your Sanity Studio",
+  "name": "sanity-plugin-netlify-deploy",
+  "version": "1.0.0",
+  "description": "Trigger Netlify Deploy Hooks from your Sanity Studio",
   "keywords": [
     "sanity",
     "sanity-plugin",
-    "vercel",
+    "netlify",
     "deploy",
     "webhook"
   ],
-  "homepage": "https://github.com/ndimatteo/sanity-plugin-vercel-deploy#readme",
+  "homepage": "https://github.com/jclusso/sanity-plugin-netlify-deploy#readme",
   "bugs": {
-    "url": "https://github.com/ndimatteo/sanity-plugin-vercel-deploy/issues"
+    "url": "https://github.com/jclusso/sanity-plugin-netlify-deploy/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/ndimatteo/sanity-plugin-vercel-deploy.git"
+    "url": "git+ssh://git@github.com/jclusso/sanity-plugin-netlify-deploy.git"
   },
   "license": "MIT",
-  "author": "Nick DiMatteo <hello@nickdimatteo.com>",
+  "author": "Jarrett Lusso <jclusso@gmail.com>",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

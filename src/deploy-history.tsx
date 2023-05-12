@@ -1,56 +1,50 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import spacetime from 'spacetime'
+import deployIcon from './deploy-icon'
 
-import { TransferIcon } from '@sanity/icons'
 import {
-  Avatar,
+  Button,
+  Badge,
   Box,
   Card,
   Flex,
   Inline,
   Label,
   Spinner,
-  Stack,
   Text,
-  Tooltip,
 } from '@sanity/ui'
 
 import DeployStatus from './deploy-status'
 import type { Deployments, SanityDeploySchema } from './types'
+import { EyeOpenIcon } from '@sanity/icons'
 
 interface DeployHistoryProps
-  extends Omit<SanityDeploySchema, '_id' | 'name' | 'disableDeleteAction'> {}
+  extends Omit<SanityDeploySchema, '_id' | 'name' | 'buildHook' | 'branch' |
+    'disableDeleteAction'> {}
 const DeployHistory: React.FC<DeployHistoryProps> = ({
-  url,
-  vercelProject,
-  vercelToken,
-  vercelTeam,
+  siteId,
+  accessToken
 }) => {
   const [deployments, setDeployments] = useState<Deployments[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
 
   useEffect(() => {
-    if (!vercelProject) {
-      return
-    }
     setLoading(true)
 
     axios
       .get(
-        `https://api.vercel.com/v5/now/deployments?projectId=${vercelProject}&meta-deployHookId=${url
-          .split('/')
-          .pop().split('?').shift()}&limit=6${vercelTeam?.id ? `&teamId=${vercelTeam?.id}` : ''}`,
+        `https://api.netlify.com/api/v1/sites/${siteId}/deploys`,
         {
           headers: {
             'content-type': 'application/json',
-            Authorization: `Bearer ${vercelToken}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         }
       )
       .then(({ data }) => {
-        setDeployments(data.deployments)
+        setDeployments(data)
         setLoading(false)
         setError(false)
       })
@@ -59,7 +53,13 @@ const DeployHistory: React.FC<DeployHistoryProps> = ({
         setError(true)
         console.warn(e)
       })
-  }, [url, vercelProject, vercelTeam?.id, vercelToken])
+  }, [siteId, accessToken])
+
+  const formatDeployTime = (totalSeconds: number) => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}m ${seconds}s`
+  }
 
   if (loading) {
     return (
@@ -76,7 +76,7 @@ const DeployHistory: React.FC<DeployHistoryProps> = ({
     return (
       <Card padding={4} radius={2} shadow={1} tone="critical">
         <Text size={2} align="center">
-          Could not load deployments for {vercelProject}
+          Could not load deployments for {siteId}
         </Text>
       </Card>
     )
@@ -86,95 +86,102 @@ const DeployHistory: React.FC<DeployHistoryProps> = ({
     <Box as={'ul'} padding={0}>
       <Card as={'li'} padding={4} borderBottom>
         <Flex>
-          <Box flex={3}>
-            <Label muted>Preview URL</Label>
+          <Box flex={1}>
+            <Label muted>Branch</Label>
           </Box>
-          <Box flex={1} marginLeft={2}>
+          <Box flex={1}>
             <Label muted>State</Label>
           </Box>
-          <Box flex={3} marginLeft={2} style={{ maxWidth: '40%' }}>
+          <Box flex={1}>
             <Label muted>Commit</Label>
           </Box>
-          <Box flex={2} marginLeft={2}>
-            <Label align="right" muted>
-              Deployed At
-            </Label>
+          <Box flex={1}>
+            <Label muted>Duration</Label>
           </Box>
+          <Box flex={1}>
+            <Label muted>Deployed At</Label>
+          </Box>
+          <Box flex={1}></Box>
         </Flex>
       </Card>
 
       {deployments?.map((deployment) => (
-        <Card key={deployment.uid} as={'li'} padding={4} borderBottom>
+        <Card key={deployment.id} as={'li'} padding={4} borderBottom>
           <Flex align="center">
-            <Box flex={3}>
-              <Text weight="semibold">
-                <Box
-                  style={{
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
+            <Box flex={1}>
+              <Text>
+                <Badge
+                  tone="primary"
+                  paddingX={3}
+                  paddingY={2}
+                  radius={6}
+                  fontSize={0}
                 >
-                  <a
-                    href={`https://${deployment.url}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: 'inherit' }}
-                  >
-                    {deployment.url}
-                  </a>
+                  {deployment.branch}
+                </Badge>
+              </Text>
+            </Box>
+            <Box flex={1}>
+              <Text>
+                <DeployStatus status={deployment.state}
+                  errorMessage={deployment.error_message} />
+              </Text>
+            </Box>
+            <Box flex={1}>
+              <Text weight="semibold">
+                <Box style={{ whiteSpace: 'nowrap' }} >
+                  {
+                    (deployment.commit_url) && (
+                      <a
+                        href={deployment.commit_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {deployment.commit_ref?.substring(0, 7)}
+                      </a>
+                    ) || '–'
+                  }
                 </Box>
               </Text>
             </Box>
-            <Box flex={1} marginLeft={2}>
-              <Text>
-                <DeployStatus status={deployment.state} />
-              </Text>
-            </Box>
-            <Box flex={3} marginLeft={2} style={{ maxWidth: '40%' }}>
-              <Stack space={2}>
-                <Text>
-                  <Box
-                    style={{
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {deployment.meta?.githubCommitMessage}
-                  </Box>
+            <Box flex={1}>
+              <Inline space={2}>
+                <Text muted>
+                  {
+                    (deployment.deploy_time &&
+                      formatDeployTime(deployment.deploy_time)
+                    ) || '–'
+                  }
                 </Text>
-                <Text size={2} muted>
-                  <Inline space={3}>
-                    <TransferIcon />
-                    {deployment.meta?.githubCommitRef}
-                  </Inline>
-                </Text>
-              </Stack>
+              </Inline>
             </Box>
-            <Flex flex={2} justify="flex-end" marginLeft={2}>
+            <Box flex={1}>
               <Inline space={2}>
                 <Text style={{ whiteSpace: 'nowrap' }} muted>
-                  {spacetime.now().since(spacetime(deployment.created)).rounded}
+                  {spacetime.now().since(spacetime(deployment.created_at)).rounded}
                 </Text>
-                <Tooltip
-                  content={
-                    <Box padding={2}>
-                      <Text muted size={1}>
-                        {deployment.creator?.username}
-                      </Text>
-                    </Box>
-                  }
-                  fallbackPlacements={['right', 'left']}
-                  placement="top"
-                >
-                  <Avatar
-                    alt={deployment.creator?.username}
-                    src={`https://vercel.com/api/www/avatar/${deployment.creator?.uid}?&s=48`}
-                    size={1}
-                  />
-                </Tooltip>
               </Inline>
+            </Box>
+            <Flex flex={1} justify="flex-end">
+              <a href={`${deployment.admin_url}/deploys/${deployment.id}`} target="_blank">
+                <Button
+                  icon={deployIcon()}
+                  mode="bleed"
+                  tone="primary"
+                  padding={3}
+                />
+              </a>
+              {
+                (deployment.state == 'ready') &&
+                <a href={deployment.links?.permalink} target="_blank">
+                  <Button
+                    icon={EyeOpenIcon}
+                    mode="bleed"
+                    tone="positive"
+                    padding={3}
+                  />
+                </a>
+              }
             </Flex>
           </Flex>
         </Card>

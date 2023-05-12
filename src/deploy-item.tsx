@@ -48,22 +48,22 @@ const fetcher = (url: string, token: string) =>
     .then((res) => res.data)
 
 const initialDeploy = {
-  title: '',
-  project: '',
-  team: '',
-  url: '',
-  token: '',
+  name: '',
+  siteId: '',
+  buildHook: '',
+  branch: '',
+  accessToken: '',
   disableDeleteAction: false,
 }
 
 interface DeployItemProps extends SanityDeploySchema {}
 const DeployItem: React.FC<DeployItemProps> = ({
-  name,
-  url,
   _id,
-  vercelProject,
-  vercelToken,
-  vercelTeam,
+  name,
+  siteId,
+  buildHook,
+  branch,
+  accessToken,
   disableDeleteAction,
 }) => {
   const client = useClient()
@@ -83,53 +83,34 @@ const DeployItem: React.FC<DeployItemProps> = ({
 
   const toast = useToast()
 
-  const { data: projectData } = useSWR(
-    [
-      `https://api.vercel.com/v8/projects/${vercelProject}${
-        vercelTeam?.id ? `?teamId=${vercelTeam?.id}` : ''
-      }`,
-      vercelToken,
-    ],
-    (path, token) => fetcher(path, token),
-    {
-      errorRetryCount: 3,
-      onError: (err) => {
-        setStatus('ERROR')
-        setErrorMessage(err.response?.data?.error?.message)
-        setIsLoading(false)
-      },
-    }
-  )
-
   const { data: deploymentData } = useSWR(
     () => [
-      `https://api.vercel.com/v5/now/deployments?projectId=${
-        projectData.id
-      }&meta-deployHookId=${url.split('/').pop().split('?').shift()}&limit=1${
-        vercelTeam?.id ? `&teamId=${vercelTeam?.id}` : ''
-      }`,
-      vercelToken,
+      `https://api.netlify.com/api/v1/sites/${siteId}/deploys`,
+      accessToken,
     ],
     (path, token) => fetcher(path, token),
     {
       errorRetryCount: 3,
-      refreshInterval: isDeploying ? 5000 : 0,
+      refreshInterval: 1000,
       onError: (err) => {
         setStatus('ERROR')
-        setErrorMessage(err.response?.data?.error?.message)
+        setErrorMessage(err.response?.data?.error?.message || err?.message || 'Something went wrong!')
         setIsLoading(false)
       },
     }
   )
 
   const onDeploy = (_name: string, _url: string) => {
-    setStatus('INITIATED')
+    setStatus('ENQUEUED')
     setDeploying(true)
     setTimestamp(null)
     setBuildTime(null)
 
+    const options = {}
+    if (branch) options.trigger_branch = branch;
+
     axios
-      .post(url)
+      .post(_url, options)
       .then(() => {
         toast.push({
           status: 'success',
@@ -150,13 +131,10 @@ const DeployItem: React.FC<DeployItemProps> = ({
   const onCancel = (id: string, token: string) => {
     setIsLoading(true)
     axios
-      .patch(`https://api.vercel.com/v12/deployments/${id}/cancel`, null, {
+      .post(`https://api.netlify.com/api/v1/deploys/${id}/cancel`, null, {
         headers: {
           'content-type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        params: {
-          ...(vercelTeam ? { teamId: vercelTeam?.id } : {}),
+          Authorization: `Bearer ${accessToken}`,
         },
       })
       .then((res) => res.data)
@@ -165,7 +143,7 @@ const DeployItem: React.FC<DeployItemProps> = ({
         setDeploying(false)
         setIsLoading(false)
         setBuildTime(null)
-        setTimestamp(res.canceledAt)
+        setTimestamp(res.updated_at)
       })
   }
 
@@ -181,68 +159,25 @@ const DeployItem: React.FC<DeployItemProps> = ({
 
   const onEdit = () => {
     setpendingDeploy({
-      title: name,
-      project: vercelProject,
-      team: vercelTeam?.slug,
-      url,
-      token: vercelToken,
+      name,
+      siteId,
+      buildHook,
+      branch,
+      accessToken: '',
       disableDeleteAction,
     })
     setIsFormOpen(true)
   }
 
   const onSubmitEdit = async () => {
-    // If we have a team slug, we'll have to get the associated teamId to include in every new request
-    // Docs: https://vercel.com/docs/api#api-basics/authentication/accessing-resources-owned-by-a-team
-    let vercelTeamID
-    let vercelTeamName
-    setIsSubmitting(true)
-
-    if (pendingDeploy.team) {
-      try {
-        const fetchTeam = await axios.get(
-          `https://api.vercel.com/v2/teams?slug=${pendingDeploy.team}`,
-          {
-            headers: {
-              Authorization: `Bearer ${pendingDeploy.token}`,
-            },
-          }
-        )
-
-        if (!fetchTeam?.data?.id) {
-          throw new Error('No team id found')
-        }
-
-        vercelTeamID = fetchTeam.data.id
-        vercelTeamName = fetchTeam.data.name
-      } catch (error) {
-        console.error(error)
-        setIsSubmitting(false)
-
-        toast.push({
-          status: 'error',
-          title: 'No Team found!',
-          closable: true,
-          description:
-            'Make sure the token you provided is valid and that the team’s slug correspond to the one you see in Vercel',
-        })
-
-        return
-      }
-    }
-
     client
       .patch(_id)
       .set({
-        name: pendingDeploy.title,
-        url: pendingDeploy.url,
-        vercelProject: pendingDeploy.project,
-        vercelTeam: {
-          slug: pendingDeploy.team || undefined,
-          name: vercelTeamName || undefined,
-          id: vercelTeamID || undefined,
-        },
-        vercelToken: pendingDeploy.token,
+        name: pendingDeploy.name,
+        siteId: pendingDeploy.siteId,
+        buildHook: pendingDeploy.buildHook,
+        branch: pendingDeploy.branch,
+        accessToken: pendingDeploy.accessToken,
         disableDeleteAction: pendingDeploy.disableDeleteAction,
       })
       .commit()
@@ -250,7 +185,7 @@ const DeployItem: React.FC<DeployItemProps> = ({
         toast.push({
           status: 'success',
           title: 'Success!',
-          description: `Updated Deployment: ${pendingDeploy.title}`,
+          description: `Updated Deployment: ${pendingDeploy.name}`,
         })
 
         setIsFormOpen(false)
@@ -262,14 +197,12 @@ const DeployItem: React.FC<DeployItemProps> = ({
   useEffect(() => {
     let isSubscribed = true
 
-    if (deploymentData?.deployments && isSubscribed) {
-      const latestDeployment = deploymentData.deployments[0]
+    if (deploymentData && isSubscribed) {
+      const latestDeployment = deploymentData[0]
 
-      setStatus(latestDeployment?.state || 'READY')
+      setStatus(latestDeployment?.state?.toUpperCase() || 'READY')
 
-      if (latestDeployment?.created) {
-        setTimestamp(latestDeployment?.created)
-      }
+      if (latestDeployment?.created_at) setTimestamp(latestDeployment?.created_at)
 
       setIsLoading(false)
     }
@@ -286,7 +219,7 @@ const DeployItem: React.FC<DeployItemProps> = ({
     if (isSubscribed) {
       if (status === 'READY' || status === 'ERROR' || status === 'CANCELED') {
         setDeploying(false)
-      } else if (status === 'BUILDING' || status === 'INITIATED') {
+      } else if (status === 'BUILDING' || status === 'ENQUEUED') {
         setDeploying(true)
       }
     }
@@ -334,26 +267,15 @@ const DeployItem: React.FC<DeployItemProps> = ({
               <Heading as="h2" size={1}>
                 <Text weight="semibold">{name}</Text>
               </Heading>
-              <Badge
-                tone="primary"
-                paddingX={3}
-                paddingY={2}
-                radius={6}
-                fontSize={0}
-              >
-                {vercelProject}
-              </Badge>
-              {vercelTeam?.id && (
                 <Badge
-                  mode="outline"
+                  tone="primary"
                   paddingX={3}
                   paddingY={2}
                   radius={6}
                   fontSize={0}
                 >
-                  {vercelTeam?.name}
+                  {deploymentData ? deploymentData[0].branch : '–'}
                 </Badge>
-              )}
             </Inline>
             <Code size={1}>
               <Box
@@ -363,7 +285,7 @@ const DeployItem: React.FC<DeployItemProps> = ({
                   textOverflow: 'ellipsis',
                 }}
               >
-                {url}
+                {siteId}
               </Box>
             </Code>
           </Stack>
@@ -375,61 +297,43 @@ const DeployItem: React.FC<DeployItemProps> = ({
           flex={[1, 'none']}
         >
           <Inline space={2}>
-            {vercelToken && vercelProject && (
-              <Box marginRight={2}>
-                <Stack space={2}>
-                  <DeployStatus status={status} justify="flex-end">
-                    {errorMessage && (
-                      <Box marginLeft={2}>
-                        <Tooltip
-                          content={
-                            <Box padding={2}>
-                              <Text muted size={1}>
-                                {errorMessage}
-                              </Text>
-                            </Box>
-                          }
-                          placement="top"
-                        >
-                          <Badge mode="outline" tone="critical">
-                            ?
-                          </Badge>
-                        </Tooltip>
-                      </Box>
-                    )}
-                  </DeployStatus>
-
-                  <Text align="right" size={1} muted>
-                    {/* eslint-disable-next-line no-nested-ternary */}
-                    {isDeploying
-                      ? buildTime || '--'
-                      : timestamp
-                      ? spacetime.now().since(spacetime(timestamp)).rounded
-                      : '--'}
-                  </Text>
-                </Stack>
+            <Box marginRight={2}>
+              <Stack space={2}>
+                <DeployStatus status={(deploymentData?.length && deploymentData[0]?.state) || 'error'}
+                  errorMessage={errorMessage || (deploymentData?.length && deploymentData[0]?.error_message)}
+                  justify="flex-end" />
+                <Text align="right" size={1} muted>
+                  {isDeploying
+                    ? buildTime || '--'
+                    : timestamp
+                    ? spacetime.now().since(spacetime(timestamp)).rounded
+                    : '--'}
+                </Text>
+              </Stack>
               </Box>
-            )}
 
             <Button
               type="button"
               tone="positive"
               disabled={isDeploying || isLoading}
               loading={isDeploying || isLoading}
-              onClick={() => onDeploy(name, url)}
+              onClick={() => onDeploy(name, buildHook)}
               paddingX={[5]}
               paddingY={[4]}
               radius={3}
               text="Deploy"
             />
 
-            {isDeploying && (status === 'BUILDING' || status === 'QUEUED') && (
+            {isDeploying && (status === 'BUILDING' || status === 'ENQUEUED' ||
+              status == 'PREPARING' || status === 'PROCESSING') && (
               <Button
                 type="button"
                 tone="critical"
                 onClick={() => {
-                  onCancel(deploymentData.deployments[0].uid, vercelToken)
+                  onCancel(deploymentData[0].id, accessToken)
                 }}
+                paddingX={[5]}
+                paddingY={[4]}
                 radius={3}
                 text="Cancel"
               />
@@ -441,7 +345,7 @@ const DeployItem: React.FC<DeployItemProps> = ({
                 <Button
                   mode="bleed"
                   icon={EllipsisVerticalIcon}
-                  disabled={isDeploying || isLoading}
+                  disabled={isLoading}
                 />
               }
               popover={{ portal: true, placement: 'bottom-end' }}
@@ -451,7 +355,7 @@ const DeployItem: React.FC<DeployItemProps> = ({
                     text="History"
                     icon={ClockIcon}
                     onClick={() => setIsHistoryOpen(true)}
-                    disabled={!deploymentData?.deployments.length}
+                    disabled={!deploymentData?.length}
                   />
                   <MenuItem
                     text="Edit"
@@ -499,9 +403,10 @@ const DeployItem: React.FC<DeployItemProps> = ({
                   onClick={() => onSubmitEdit()}
                   disabled={
                     isSubmitting ||
-                    !pendingDeploy.project ||
-                    !pendingDeploy.url ||
-                    !pendingDeploy.token
+                    !pendingDeploy.name ||
+                    !pendingDeploy.siteId ||
+                    !pendingDeploy.buildHook ||
+                    !pendingDeploy.accessToken
                   }
                 />
               </Grid>
@@ -511,79 +416,99 @@ const DeployItem: React.FC<DeployItemProps> = ({
           <Box padding={4}>
             <Stack space={4}>
               <FormField
-                title="Display Title (internal use only)"
+                title="Site Name"
+                description="This should be the name of the site you're deploying."
+              >
+                <TextInput
+                  type="text"
+                  value={pendingDeploy.name}
+                  onChange={(e) => {
+                    e.persist()
+                    const name = (e.target as HTMLInputElement).value
+                    setpendingDeploy((prevState) => ({
+                      ...prevState,
+                      ...{ name },
+                    }))
+                  }}
+                />
+              </FormField>
+
+              <FormField
+                title="Site ID"
+                description='Site Settings → General → Site details → "Site ID"'
+              >
+                <TextInput
+                  type="text"
+                  value={pendingDeploy.siteId}
+                  onChange={(e) => {
+                    e.persist()
+                    const siteId = (e.target as HTMLInputElement).value
+                    setpendingDeploy((prevState) => ({
+                      ...prevState,
+                      ...{ siteId },
+                    }))
+                  }}
+                />
+              </FormField>
+
+              <FormField
+                title="Build Hook"
+                description="Site Settings → Build & deploy → Build hooks"
+              >
+                <TextInput
+                  type="text"
+                  inputMode="url"
+                  value={pendingDeploy.buildHook}
+                  onChange={(e) => {
+                    e.persist()
+                    const buildHook = (e.target as HTMLInputElement).value
+                    setpendingDeploy((prevState) => ({
+                      ...prevState,
+                      ...{ buildHook },
+                    }))
+                  }}
+                />
+              </FormField>
+
+              <FormField
+                title="Branch"
+                description="Overrides the default branch for your Build Hook (optional)"
+              >
+                <TextInput
+                  type="text"
+                  inputMode="url"
+                  value={pendingDeploy.branch}
+                  onChange={(e) => {
+                    e.persist()
+                    const branch = (e.target as HTMLInputElement).value
+                    setpendingDeploy((prevState) => ({
+                      ...prevState,
+                      ...{ branch },
+                    }))
+                  }}
+                />
+              </FormField>
+
+              <FormField
+                title="Access Token"
                 description={
                   <>
-                    This should be the environment you are deploying to, like{' '}
-                    <em>Production</em> or <em>Staging</em>
+                    User dropdown → User settings → Applications →&nbsp;
+                    <a href="https://app.netlify.com/user/applications#personal-access-tokens" target="_blank">
+                      Personal access tokens
+                    </a>
                   </>
                 }
               >
                 <TextInput
                   type="text"
-                  value={pendingDeploy.title}
+                  value={pendingDeploy.accessToken}
                   onChange={(e) => {
                     e.persist()
-                    const title = (e.target as HTMLInputElement).value
+                    const accessToken = (e.target as HTMLInputElement).value
                     setpendingDeploy((prevState) => ({
                       ...prevState,
-                      ...{ title },
-                    }))
-                  }}
-                />
-              </FormField>
-
-              <FormField
-                title="Vercel Project Name"
-                description={`Vercel Project: Settings → General → "Project Name"`}
-              >
-                <TextInput
-                  type="text"
-                  value={pendingDeploy.project}
-                  onChange={(e) => {
-                    e.persist()
-                    const project = (e.target as HTMLInputElement).value
-                    setpendingDeploy((prevState) => ({
-                      ...prevState,
-                      ...{ project },
-                    }))
-                  }}
-                />
-              </FormField>
-
-              <FormField
-                title="Vercel Team Name"
-                description={`Required for projects under a Vercel Team: Settings → General → "Team Name"`}
-              >
-                <TextInput
-                  type="text"
-                  value={pendingDeploy.team}
-                  onChange={(e) => {
-                    e.persist()
-                    const team = (e.target as HTMLInputElement).value
-                    setpendingDeploy((prevState) => ({
-                      ...prevState,
-                      ...{ team },
-                    }))
-                  }}
-                />
-              </FormField>
-
-              <FormField
-                title="Deploy Hook URL"
-                description={`Vercel Project: Settings → Git → "Deploy Hooks"`}
-              >
-                <TextInput
-                  type="text"
-                  inputMode="url"
-                  value={pendingDeploy.url}
-                  onChange={(e) => {
-                    e.persist()
-                    const pendingDeployUrl = (e.target as HTMLInputElement)
-                      .value
-                    setpendingDeploy((prevState) => ({
-                      ...prevState,
-                      ...{ url: pendingDeployUrl },
+                      ...{ accessToken },
                     }))
                   }}
                 />
@@ -597,7 +522,8 @@ const DeployItem: React.FC<DeployItemProps> = ({
                       style={{ display: 'block' }}
                       onChange={(e) => {
                         e.persist()
-                        const isChecked = (e.target as HTMLInputElement).checked
+                        const isChecked = (e.target as HTMLInputElement)
+                          .checked
 
                         setpendingDeploy((prevState) => ({
                           ...prevState,
@@ -630,12 +556,7 @@ const DeployItem: React.FC<DeployItemProps> = ({
           onClose={() => setIsHistoryOpen(false)}
           width={2}
         >
-          <DeployHistory
-            url={url}
-            vercelProject={projectData.id}
-            vercelToken={vercelToken}
-            vercelTeam={vercelTeam}
-          />
+          <DeployHistory siteId={siteId} accessToken={accessToken} />
         </Dialog>
       )}
     </>

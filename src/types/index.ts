@@ -2,48 +2,44 @@ import React from 'react'
 
 export type StatusType =
   | 'LOADING'
+  | 'NEW'
   | 'ERROR'
-  | 'INITIATED'
+  | 'ENQUEUED'
+  | 'PREPARING'
+  | 'PROCESSING'
   | 'CANCELED'
   | 'READY'
   | 'BUILDING'
-  | 'QUEUED'
-
-export interface VercelTeam {
-  [key: string]: unknown
-  slug: string
-  name: string
-  id: string
-}
 
 export interface SanityDeploySchema {
   _id: string
   name: string
-  url: string
-  vercelProject: string
-  vercelTeam: VercelTeam
-  vercelToken: string
+  siteId: string
+  buildHook: string
+  branch: string
+  accessToken: string
   disableDeleteAction: boolean
 }
 
 export interface Deployments {
   [key: string]: unknown
-  uid: string
-  created: string
+  id: string
+  branch: string
+  commit_ref: string
+  commit_url: string
+  committer: string
+  created_at: string
+  deploy_time: number
+  links: {
+    [key: string]: unknown
+    permalink?: string
+  }
+  admin_url: string
+  error_message: string
   state: string
-  url: string
-  creator: {
-    [key: string]: unknown
-    username?: string
-  }
-  meta: {
-    [key: string]: unknown
-    githubCommitMessage: string
-    githubCommitRef: string
-  }
 }
 
-export interface VercelDeployConfig {
+export interface NetlifyDeployConfig {
   name?: string
   icon?: React.ReactNode
   title?: string

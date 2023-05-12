@@ -1,2 +1,2 @@
-export { vercelDeployTool } from './deploy-tool'
-export type { VercelDeployConfig } from './types'
+export { netlifyDeployTool } from './deploy-tool'
+export type { NetlifyDeployConfig } from './types'

@@ -1,24 +1,24 @@
 <h3 align="center">
-  Vercel Deployment for Sanity
+  Netlify Deployment for Sanity
 </h3>
 <p align="center">
-  <strong>Trigger Vercel Deploy Hooks from your Sanity V3 Studio.</strong><br />
-✨ LIVE status updates ✨ multiple deployments ✨ active polling ✨ Vercel Teams support ✨
+  <strong>Trigger Netlify Deploy Hooks from your Sanity V3 Studio.</strong><br />
+✨ LIVE status updates ✨ multiple deployments ✨ active polling ✨
 </p>
 
-![vercel-deploy-v3](https://user-images.githubusercontent.com/737188/214927717-ba84450f-8359-401c-acf0-08eeafc22881.png)
+![netlify-deploy-v3](screenshot.png)
 
 <br />
 
 ## 🔌 Install
 
 ```sh
-yarn add sanity-plugin-vercel-deploy
+yarn add sanity-plugin-netlify-deploy
 # or npm
-npm i sanity-plugin-vercel-deploy
+npm i sanity-plugin-netlify-deploy
 ```
 
-> **Warning** <br />This is a **Sanity Studio V3** plugin. For the V2 version, please refer to the [studio-v2 branch](https://github.com/ndimatteo/sanity-plugin-vercel-deploy/tree/studio-v2).
+> **Warning** <br />This is a **Sanity Studio V3** plugin. There is no V2 version.
 
 <br />
 
@@ -27,49 +27,48 @@ npm i sanity-plugin-vercel-deploy
 ```ts
 // `sanity.config.ts` / `sanity.config.js`:
 import { defineConfig } from 'sanity'
-import { vercelDeployTool } from 'sanity-plugin-vercel-deploy'
+import { netlifyDeployTool } from 'sanity-plugin-netlify-deploy'
 
 export default defineConfig({
   // ...
   plugins: [
     // ...
-    vercelDeployTool(),
+    netlifyDeployTool(),
   ],
 })
 ```
 
 <br />
 
-## 🚀 Your first Vercel Deployment
+## 🚀 Your first Netlify Deployment
 
 Once installed, you should see a new "Deploy" tool in your Sanity Studio navbar.
 
 To create a new deployment, click the **"Add Project"** button. Next, you'll be prompted to add the following:
 
-#### `Title`
+#### `Site Name`
 
 A name for your deployment to help you organize your deployments. <br />
-_Typically, this should be the environment you are deploying to, like `Production` or `Staging`_
+_Typically, this should be the name of the site you're deploying_
 
-#### `Vercel Project Name`
+#### `Site ID`
 
-This is the slugified project name listed in your Vercel account. <br />
-_You can find this in your Vercel Project under Settings → General → "Project Name"_
+This is the Site ID for your site in your Netlify account. <br />
+_You can find this in your Netlify site, under Site Settings → General → Site details → "Site ID"_
 
-#### `Vercel Team Name` _(optional)_
+#### `Build Hook`
 
-If your project is part of a Vercel Team you must provide this value. <br />
-_You can find this in your Vercel Team, under Settings → General → "Team Name"_
+This is the Build Hook for your site in your Netlify account. <br />
+_You can find this in your Netlify site, under Site Settings → Build & deploy → Build hooks_
 
-#### `Deploy Hook URL`
+#### `Branch` _(optional)_
 
-This is the Vercel Deploy hook you want to trigger builds with. <br />
-_You can find this in your Vercel Project under Settings → Git → "Deploy Hooks"_
+This will override the default branch for your Build Hook. <br />
 
-#### `Vercel Token`
+#### `Access Token`
 
-This is a token from your Vercel Account (not project). <br />
-_You can find this from your Vercel Account dropdown under Settings → "Tokens"_
+This is your Netlify Personal Access Token. <br />
+_You can find this in your Netlify account under User dropdown → User settings → Applications → Personal access tokens_
 
 <br />
 
@@ -87,6 +86,5 @@ on how to run this plugin with hotreload in the studio.
 
 ### MIT
 
-> [nickdimatteo.com](https://nickdimatteo.com) &nbsp;&middot;&nbsp;
-> Github [@ndimatteo](https://github.com/ndimatteo) &nbsp;&middot;&nbsp;
-> Instagram [@ndimatteo](https://instagram.com/ndimatteo)
+> [jarrettlusso.com](https://jarrettlusso.com) &nbsp;&middot;&nbsp;
+> Github [@jclusso](https://github.com/jclusso) &nbsp;&middot;&nbsp;

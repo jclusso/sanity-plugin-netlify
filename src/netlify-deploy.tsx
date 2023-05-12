@@ -26,17 +26,18 @@ import { FormField, useColorScheme } from 'sanity'
 import DeployItem from './deploy-item'
 import { useClient } from './hook/useClient'
 import type { SanityDeploySchema } from './types'
+import deployIcon from './deploy-icon'
 
 const initialDeploy = {
-  title: '',
-  project: '',
-  team: '',
-  url: '',
-  token: '',
+  name: '',
+  siteId: '',
+  buildHook: '',
+  branch: '',
+  accessToken: '',
   disableDeleteAction: false,
 }
 
-const VercelDeploy = () => {
+const NetlifyDeploy = () => {
   const WEBHOOK_TYPE = 'webhook_deploy'
   const WEBHOOK_QUERY = `*[_type == "${WEBHOOK_TYPE}"] | order(_createdAt)`
   const client = useClient()
@@ -50,67 +51,24 @@ const VercelDeploy = () => {
   const toast = useToast()
 
   const onSubmit = async () => {
-    // If we have a team slug, we'll have to get the associated teamId to include in every new request
-    // Docs: https://vercel.com/docs/api#api-basics/authentication/accessing-resources-owned-by-a-team
-    let vercelTeamID
-    let vercelTeamName
-    setIsSubmitting(true)
-
-    if (pendingDeploy.team) {
-      try {
-        const fetchTeam = await axios.get(
-          `https://api.vercel.com/v2/teams?slug=${pendingDeploy.team}`,
-          {
-            headers: {
-              Authorization: `Bearer ${pendingDeploy.token}`,
-            },
-          }
-        )
-
-        if (!fetchTeam?.data?.id) {
-          throw new Error('No team id found')
-        }
-
-        vercelTeamID = fetchTeam.data.id
-        vercelTeamName = fetchTeam.data.name
-      } catch (error) {
-        console.error(error)
-        setIsSubmitting(false)
-
-        toast.push({
-          status: 'error',
-          title: 'No Team found!',
-          closable: true,
-          description:
-            'Make sure the token you provided is valid and that the team’s slug correspond to the one you see in Vercel',
-        })
-
-        return
-      }
-    }
-
     client
       .create({
-        // Explicitly define an _id inside the vercel-deploy path to make sure it's not publicly accessible
+        // Explicitly define an _id inside the netlify-deploy path to make sure it's not publicly accessible
         // This will protect users' tokens & project info. Read more: https://www.sanity.io/docs/ids
-        _id: `vercel-deploy.${nanoid()}`,
+        _id: `netlify-deploy.${nanoid()}`,
         _type: WEBHOOK_TYPE,
-        name: pendingDeploy.title,
-        url: pendingDeploy.url,
-        vercelProject: pendingDeploy.project,
-        vercelTeam: {
-          slug: pendingDeploy.team || undefined,
-          name: vercelTeamName || undefined,
-          id: vercelTeamID || undefined,
-        },
-        vercelToken: pendingDeploy.token,
+        name: pendingDeploy.name,
+        siteId: pendingDeploy.siteId,
+        buildHook: pendingDeploy.buildHook,
+        branch: pendingDeploy.branch,
+        accessToken: pendingDeploy.accessToken,
         disableDeleteAction: pendingDeploy.disableDeleteAction,
       })
       .then(() => {
         toast.push({
           status: 'success',
           title: 'Success!',
-          description: `Created Deployment: ${pendingDeploy.title}`,
+          description: `Created Deployment: ${pendingDeploy.name}`,
         })
         setIsFormOpen(false)
         setIsSubmitting(false)
@@ -190,15 +148,7 @@ const VercelDeploy = () => {
               <Flex align="center">
                 <Flex flex={1} align="center">
                   <Card>
-                    <svg
-                      fill="currentColor"
-                      viewBox="0 0 512 512"
-                      height="2rem"
-                      width="2rem"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path d="M256 48l240 416H16z" />
-                    </svg>
+                    {deployIcon()}
                   </Card>
                   <Card marginX={1} style={{ opacity: 0.15 }}>
                     <svg
@@ -217,7 +167,7 @@ const VercelDeploy = () => {
                   </Card>
                   <Card>
                     <Text as="h1" size={2} weight="semibold">
-                      Vercel Deployments
+                      Netlify Deployments
                     </Text>
                   </Card>
                 </Flex>
@@ -255,13 +205,13 @@ const VercelDeploy = () => {
                   deploys.map((deploy) => (
                     <Card key={deploy._id} as={'li'} padding={4} borderBottom>
                       <DeployItem
+                        _id={deploy._id}
                         key={deploy._id}
                         name={deploy.name}
-                        url={deploy.url}
-                        _id={deploy._id}
-                        vercelProject={deploy.vercelProject}
-                        vercelTeam={deploy.vercelTeam}
-                        vercelToken={deploy.vercelToken}
+                        siteId={deploy.siteId}
+                        buildHook={deploy.buildHook}
+                        branch={deploy.branch}
+                        accessToken={deploy.accessToken}
                         disableDeleteAction={deploy.disableDeleteAction}
                       />
                     </Card>
@@ -339,7 +289,7 @@ const VercelDeploy = () => {
 
                         <Text size={1} weight="semibold" muted>
                           <a
-                            href="https://github.com/ndimatteo/sanity-plugin-vercel-deploy#-your-first-vercel-deployment"
+                            href="https://github.com/jclusso/sanity-plugin-netlify-deploy#-your-first-netlify-deployment"
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{ color: 'inherit' }}
@@ -380,9 +330,10 @@ const VercelDeploy = () => {
                     onClick={() => onSubmit()}
                     disabled={
                       isSubmitting ||
-                      !pendingDeploy.project ||
-                      !pendingDeploy.url ||
-                      !pendingDeploy.token
+                      !pendingDeploy.name ||
+                      !pendingDeploy.siteId ||
+                      !pendingDeploy.buildHook ||
+                      !pendingDeploy.accessToken
                     }
                   />
                 </Grid>
@@ -392,96 +343,99 @@ const VercelDeploy = () => {
             <Box padding={4}>
               <Stack space={4}>
                 <FormField
-                  title="Display Title (internal use only)"
+                  title="Site Name"
+                  description="This should be the name of the site you're deploying."
+                >
+                  <TextInput
+                    type="text"
+                    value={pendingDeploy.name}
+                    onChange={(e) => {
+                      e.persist()
+                      const name = (e.target as HTMLInputElement).value
+                      setpendingDeploy((prevState) => ({
+                        ...prevState,
+                        ...{ name },
+                      }))
+                    }}
+                  />
+                </FormField>
+
+                <FormField
+                  title="Site ID"
+                  description='Site Settings → General → Site details → "Site ID"'
+                >
+                  <TextInput
+                    type="text"
+                    value={pendingDeploy.siteId}
+                    onChange={(e) => {
+                      e.persist()
+                      const siteId = (e.target as HTMLInputElement).value
+                      setpendingDeploy((prevState) => ({
+                        ...prevState,
+                        ...{ siteId },
+                      }))
+                    }}
+                  />
+                </FormField>
+
+                <FormField
+                  title="Build Hook"
+                  description="Site Settings → Build & deploy → Build hooks"
+                >
+                  <TextInput
+                    type="text"
+                    inputMode="url"
+                    value={pendingDeploy.buildHook}
+                    onChange={(e) => {
+                      e.persist()
+                      const buildHook = (e.target as HTMLInputElement).value
+                      setpendingDeploy((prevState) => ({
+                        ...prevState,
+                        ...{ buildHook },
+                      }))
+                    }}
+                  />
+                </FormField>
+
+                <FormField
+                  title="Branch"
+                  description="Overrides the default branch for your Build Hook (optional)"
+                >
+                  <TextInput
+                    type="text"
+                    inputMode="url"
+                    value={pendingDeploy.branch}
+                    onChange={(e) => {
+                      e.persist()
+                      const branch = (e.target as HTMLInputElement).value
+                      setpendingDeploy((prevState) => ({
+                        ...prevState,
+                        ...{ branch },
+                      }))
+                    }}
+                  />
+                </FormField>
+
+                <FormField
+                  title="Access Token"
                   description={
                     <>
-                      This should be the environment you are deploying to, like{' '}
-                      <em>Production</em> or <em>Staging</em>
+                    User dropdown: User settings → Applications →&nbsp;
+                    <a href="https://app.netlify.com/user/applications#personal-access-tokens" target="_blank">
+                      Personal access tokens
+                    </a>
                     </>
                   }
                 >
                   <TextInput
                     type="text"
-                    value={pendingDeploy.title}
+                    value={pendingDeploy.accessToken}
                     onChange={(e) => {
                       e.persist()
-                      const title = (e.target as HTMLInputElement).value
+                      const accessToken = (e.target as HTMLInputElement).value
                       setpendingDeploy((prevState) => ({
                         ...prevState,
-                        ...{ title },
-                      }))
-                    }}
-                  />
-                </FormField>
-
-                <FormField
-                  title="Vercel Project Name"
-                  description={`Vercel Project: Settings → General → "Project Name"`}
-                >
-                  <TextInput
-                    type="text"
-                    value={pendingDeploy.project}
-                    onChange={(e) => {
-                      e.persist()
-                      const project = (e.target as HTMLInputElement).value
-                      setpendingDeploy((prevState) => ({
-                        ...prevState,
-                        ...{ project },
-                      }))
-                    }}
-                  />
-                </FormField>
-
-                <FormField
-                  title="Vercel Team Name"
-                  description={`Required for projects under a Vercel Team: Settings → General → "Team Name"`}
-                >
-                  <TextInput
-                    type="text"
-                    value={pendingDeploy.team}
-                    onChange={(e) => {
-                      e.persist()
-                      const team = (e.target as HTMLInputElement).value
-                      setpendingDeploy((prevState) => ({
-                        ...prevState,
-                        ...{ team },
-                      }))
-                    }}
-                  />
-                </FormField>
-
-                <FormField
-                  title="Deploy Hook URL"
-                  description={`Vercel Project: Settings → Git → "Deploy Hooks"`}
-                >
-                  <TextInput
-                    type="text"
-                    inputMode="url"
-                    value={pendingDeploy.url}
-                    onChange={(e) => {
-                      e.persist()
-                      const url = (e.target as HTMLInputElement).value
-                      setpendingDeploy((prevState) => ({
-                        ...prevState,
-                        ...{ url },
-                      }))
-                    }}
-                  />
-                </FormField>
-
-                <FormField
-                  title="Vercel Token"
-                  description={`Vercel Account dropdown: Settings → "Tokens"`}
-                >
-                  <TextInput
-                    type="text"
-                    value={pendingDeploy.token}
-                    onChange={(e) => {
-                      e.persist()
-                      const token = (e.target as HTMLInputElement).value
-                      setpendingDeploy((prevState) => ({
-                        ...prevState,
-                        ...{ token },
+                        ...{ accessToken },
                       }))
                     }}
                   />
@@ -525,4 +479,4 @@ const VercelDeploy = () => {
   )
 }
 
-export default VercelDeploy
+export default NetlifyDeploy
