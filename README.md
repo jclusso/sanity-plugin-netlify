@@ -88,3 +88,9 @@ on how to run this plugin with hotreload in the studio.
 
 > [jarrettlusso.com](https://jarrettlusso.com) &nbsp;&middot;&nbsp;
 > Github [@jclusso](https://github.com/jclusso) &nbsp;&middot;&nbsp;
+
+### Credits
+
+Thanks to [@ndimatteo](https://github.com/ndimatteo) for making
+[sanity-plugin-vercel-deploy](https://github.com/ndimatteo/sanity-plugin-vercel-deploy)
+which this was heavily based on.
