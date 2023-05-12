@@ -1,5 +1,5 @@
 {
-  "name": "sanity-plugin-netlify-deploy",
+  "name": "sanity-plugin-netlify",
   "version": "1.0.0",
   "description": "Trigger Netlify Deploy Hooks from your Sanity Studio",
   "keywords": [
@@ -9,13 +9,13 @@
     "deploy",
     "webhook"
   ],
-  "homepage": "https://github.com/jclusso/sanity-plugin-netlify-deploy#readme",
+  "homepage": "https://github.com/jclusso/sanity-plugin-netlify#readme",
   "bugs": {
-    "url": "https://github.com/jclusso/sanity-plugin-netlify-deploy/issues"
+    "url": "https://github.com/jclusso/sanity-plugin-netlify/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/jclusso/sanity-plugin-netlify-deploy.git"
+    "url": "git+ssh://git@github.com/jclusso/sanity-plugin-netlify.git"
   },
   "license": "MIT",
   "author": "Jarrett Lusso <jclusso@gmail.com>",

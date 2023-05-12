@@ -1,4 +1,3 @@
-import axios from 'axios'
 import { nanoid } from 'nanoid'
 import { useEffect, useState } from 'react'
 import { type Subscription } from 'rxjs'
@@ -26,7 +25,7 @@ import { FormField, useColorScheme } from 'sanity'
 import DeployItem from './deploy-item'
 import { useClient } from './hook/useClient'
 import type { SanityDeploySchema } from './types'
-import deployIcon from './deploy-icon'
+import deployIcon from './netlify-icon'
 
 const initialDeploy = {
   name: '',
@@ -53,9 +52,9 @@ const NetlifyDeploy = () => {
   const onSubmit = async () => {
     client
       .create({
-        // Explicitly define an _id inside the netlify-deploy path to make sure it's not publicly accessible
+        // Explicitly define an _id inside the netlify path to make sure it's not publicly accessible
         // This will protect users' tokens & project info. Read more: https://www.sanity.io/docs/ids
-        _id: `netlify-deploy.${nanoid()}`,
+        _id: `netlify.${nanoid()}`,
         _type: WEBHOOK_TYPE,
         name: pendingDeploy.name,
         siteId: pendingDeploy.siteId,
@@ -289,7 +288,7 @@ const NetlifyDeploy = () => {
 
                         <Text size={1} weight="semibold" muted>
                           <a
-                            href="https://github.com/jclusso/sanity-plugin-netlify-deploy#-your-first-netlify-deployment"
+                            href="https://github.com/jclusso/sanity-plugin-netlify#-your-first-netlify-deployment"
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{ color: 'inherit' }}

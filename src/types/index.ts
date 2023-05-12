@@ -39,7 +39,7 @@ export interface Deployments {
   state: string
 }
 
-export interface NetlifyDeployConfig {
+export interface NetlifyConfig {
   name?: string
   icon?: React.ReactNode
   title?: string

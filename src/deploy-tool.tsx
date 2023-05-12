@@ -1,22 +1,22 @@
 import { definePlugin } from 'sanity'
 import { route } from 'sanity/router'
 
-import { default as deployIcon } from './deploy-icon'
-import type { NetlifyDeployConfig } from './types'
-import NetlifyDeploy from './netlify-deploy'
+import { default as deployIcon } from './netlify-icon'
+import type { NetlifyConfig } from './types'
+import Netlify from './netlify'
 
-export const netlifyDeployTool = definePlugin<NetlifyDeployConfig | void>(
+export const netlifyTool = definePlugin<NetlifyConfig | void>(
   (options) => {
     const { name, title, icon, ...config } = options || {}
 
     return {
-      name: 'sanity-plugin-netlify-deploy',
+      name: 'sanity-plugin-netlify',
       tools: [
         {
-          name: name || 'netlify-deploy',
+          name: name || 'netlify',
           title: title || 'Deploy',
           icon: icon || deployIcon,
-          component: NetlifyDeploy,
+          component: Netlify,
           options: config,
           router: route.create('/*'),
         },

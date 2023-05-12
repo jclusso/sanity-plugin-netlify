@@ -1,2 +1,2 @@
-export { netlifyDeployTool } from './deploy-tool'
-export type { NetlifyDeployConfig } from './types'
+export { netlifyTool } from './deploy-tool'
+export type { NetlifyConfig } from './types'

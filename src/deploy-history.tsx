@@ -1,7 +1,7 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import spacetime from 'spacetime'
-import deployIcon from './deploy-icon'
+import deployIcon from './netlify-icon'
 
 import {
   Button,

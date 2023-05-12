@@ -1,4 +1,4 @@
-const deployIcon = () => {
+const netlifyIcon = () => {
   return (
     <svg width="20px" height="20px" viewBox="0 0 24 24" role="img" xmlns="http://www.w3.org/2000/svg">
       <title>Netlify icon</title>
@@ -8,4 +8,4 @@ const deployIcon = () => {
   )
 }
 
-export default deployIcon
+export default netlifyIcon

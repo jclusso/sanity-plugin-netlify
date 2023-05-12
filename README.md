@@ -6,16 +6,16 @@
 ✨ LIVE status updates ✨ multiple deployments ✨ active polling ✨
 </p>
 
-![netlify-deploy-v3](screenshot.png)
+![netlify-v3](screenshot.png)
 
 <br />
 
 ## 🔌 Install
 
 ```sh
-yarn add sanity-plugin-netlify-deploy
+yarn add sanity-plugin-netlify
 # or npm
-npm i sanity-plugin-netlify-deploy
+npm i sanity-plugin-netlify
 ```
 
 > **Warning** <br />This is a **Sanity Studio V3** plugin. There is no V2 version.
@@ -27,13 +27,13 @@ npm i sanity-plugin-netlify-deploy
 ```ts
 // `sanity.config.ts` / `sanity.config.js`:
 import { defineConfig } from 'sanity'
-import { netlifyDeployTool } from 'sanity-plugin-netlify-deploy'
+import { netlifyTool } from 'sanity-plugin-netlify'
 
 export default defineConfig({
   // ...
   plugins: [
     // ...
-    netlifyDeployTool(),
+    netlifyTool(),
   ],
 })
 ```
