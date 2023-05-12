@@ -106,7 +106,7 @@ const DeployItem: React.FC<DeployItemProps> = ({
     setTimestamp(null)
     setBuildTime(null)
 
-    const options = {}
+    const options: any = {}
     if (branch) options.trigger_branch = branch;
 
     axios
@@ -170,16 +170,21 @@ const DeployItem: React.FC<DeployItemProps> = ({
   }
 
   const onSubmitEdit = async () => {
+    const update: any = {
+      name: pendingDeploy.name,
+      siteId: pendingDeploy.siteId,
+      buildHook: pendingDeploy.buildHook,
+      branch: pendingDeploy.branch,
+      disableDeleteAction: pendingDeploy.disableDeleteAction,
+    }
+
+    if (pendingDeploy.accessToken) {
+      update.accessToken = pendingDeploy.accessToken
+    }
+
     client
       .patch(_id)
-      .set({
-        name: pendingDeploy.name,
-        siteId: pendingDeploy.siteId,
-        buildHook: pendingDeploy.buildHook,
-        branch: pendingDeploy.branch,
-        accessToken: pendingDeploy.accessToken,
-        disableDeleteAction: pendingDeploy.disableDeleteAction,
-      })
+      .set(update)
       .commit()
       .then(() => {
         toast.push({
@@ -405,8 +410,7 @@ const DeployItem: React.FC<DeployItemProps> = ({
                     isSubmitting ||
                     !pendingDeploy.name ||
                     !pendingDeploy.siteId ||
-                    !pendingDeploy.buildHook ||
-                    !pendingDeploy.accessToken
+                    !pendingDeploy.buildHook
                   }
                 />
               </Grid>
