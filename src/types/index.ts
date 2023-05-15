@@ -18,6 +18,7 @@ export interface SanityDeploySchema {
   buildHook: string
   branch: string
   accessToken: string
+  onlyShowProductionDeploys: boolean
   disableDeleteAction: boolean
 }
 

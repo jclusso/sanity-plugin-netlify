@@ -33,6 +33,7 @@ const initialDeploy = {
   buildHook: '',
   branch: '',
   accessToken: '',
+  onlyShowProductionDeploys: true,
   disableDeleteAction: false,
 }
 
@@ -61,6 +62,7 @@ const NetlifyDeploy = () => {
         buildHook: pendingDeploy.buildHook,
         branch: pendingDeploy.branch,
         accessToken: pendingDeploy.accessToken,
+        onlyShowProductionDeploys: pendingDeploy.onlyShowProductionDeploys,
         disableDeleteAction: pendingDeploy.disableDeleteAction,
       })
       .then(() => {
@@ -211,6 +213,7 @@ const NetlifyDeploy = () => {
                         buildHook={deploy.buildHook}
                         branch={deploy.branch}
                         accessToken={deploy.accessToken}
+                        onlyShowProductionDeploys={deploy.onlyShowProductionDeploys}
                         disableDeleteAction={deploy.disableDeleteAction}
                       />
                     </Card>
@@ -438,6 +441,35 @@ const NetlifyDeploy = () => {
                       }))
                     }}
                   />
+                </FormField>
+
+                <FormField>
+                  <Card paddingY={3}>
+                    <Flex align="center">
+                      <Switch
+                        id="onlyShowProductionDeploys"
+                        style={{ display: 'block' }}
+                        onChange={(e) => {
+                          e.persist()
+                          const isChecked = (e.target as HTMLInputElement)
+                            .checked
+
+                          setpendingDeploy((prevState) => ({
+                            ...prevState,
+                            ...{ onlyShowProductionDeploys: isChecked },
+                          }))
+                        }}
+                        checked={pendingDeploy.onlyShowProductionDeploys}
+                      />
+                      <Box flex={1} paddingLeft={3}>
+                        <Text>
+                          <label htmlFor="onlyShowProductionDeploys">
+                            Only include Production deploys?
+                          </label>
+                        </Text>
+                      </Box>
+                    </Flex>
+                  </Card>
                 </FormField>
 
                 <FormField>

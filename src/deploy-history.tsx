@@ -24,7 +24,8 @@ interface DeployHistoryProps
     'disableDeleteAction'> {}
 const DeployHistory: React.FC<DeployHistoryProps> = ({
   siteId,
-  accessToken
+  accessToken,
+  onlyShowProductionDeploys
 }) => {
   const [deployments, setDeployments] = useState<Deployments[]>([])
   const [loading, setLoading] = useState(false)
@@ -32,6 +33,9 @@ const DeployHistory: React.FC<DeployHistoryProps> = ({
 
   useEffect(() => {
     setLoading(true)
+
+    const params: any = {}
+    if (onlyShowProductionDeploys) params.production = true;
 
     axios
       .get(
@@ -41,6 +45,7 @@ const DeployHistory: React.FC<DeployHistoryProps> = ({
             'content-type': 'application/json',
             Authorization: `Bearer ${accessToken}`,
           },
+          params
         }
       )
       .then(({ data }) => {

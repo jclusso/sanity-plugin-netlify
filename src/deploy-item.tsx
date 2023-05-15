@@ -37,13 +37,14 @@ import DeployStatus from './deploy-status'
 import { useClient } from './hook/useClient'
 import type { SanityDeploySchema, StatusType } from './types'
 
-const fetcher = (url: string, token: string) =>
+const fetcher = (url: string, accessToken: string, params: any) =>
   axios
     .get(url, {
       headers: {
         'content-type': 'application/json',
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
       },
+      params
     })
     .then((res) => res.data)
 
@@ -53,6 +54,7 @@ const initialDeploy = {
   buildHook: '',
   branch: '',
   accessToken: '',
+  onlyShowProductionDeploys: true,
   disableDeleteAction: false,
 }
 
@@ -64,6 +66,7 @@ const DeployItem: React.FC<DeployItemProps> = ({
   buildHook,
   branch,
   accessToken,
+  onlyShowProductionDeploys,
   disableDeleteAction,
 }) => {
   const client = useClient()
@@ -83,12 +86,15 @@ const DeployItem: React.FC<DeployItemProps> = ({
 
   const toast = useToast()
 
+  const deploymentDataParam: any = {}
+  if (onlyShowProductionDeploys) deploymentDataParam.production = true;
   const { data: deploymentData } = useSWR(
     () => [
       `https://api.netlify.com/api/v1/sites/${siteId}/deploys`,
       accessToken,
+      deploymentDataParam
     ],
-    (path, token) => fetcher(path, token),
+    fetcher,
     {
       errorRetryCount: 3,
       refreshInterval: 1000,
@@ -164,6 +170,7 @@ const DeployItem: React.FC<DeployItemProps> = ({
       buildHook,
       branch,
       accessToken: '',
+      onlyShowProductionDeploys,
       disableDeleteAction,
     })
     setIsFormOpen(true)
@@ -175,6 +182,7 @@ const DeployItem: React.FC<DeployItemProps> = ({
       siteId: pendingDeploy.siteId,
       buildHook: pendingDeploy.buildHook,
       branch: pendingDeploy.branch,
+      onlyShowProductionDeploys: pendingDeploy.onlyShowProductionDeploys,
       disableDeleteAction: pendingDeploy.disableDeleteAction,
     }
 
@@ -304,7 +312,7 @@ const DeployItem: React.FC<DeployItemProps> = ({
           <Inline space={2}>
             <Box marginRight={2}>
               <Stack space={2}>
-                <DeployStatus status={(deploymentData?.length && deploymentData[0]?.state) || 'error'}
+                <DeployStatus status={(deploymentData?.length && deploymentData[0]?.state) || 'LOADING'}
                   errorMessage={errorMessage || (deploymentData?.length && deploymentData[0]?.error_message)}
                   justify="flex-end" />
                 <Text align="right" size={1} muted>
@@ -522,6 +530,35 @@ const DeployItem: React.FC<DeployItemProps> = ({
                 <Card paddingY={3}>
                   <Flex align="center">
                     <Switch
+                      id="onlyShowProductionDeploys"
+                      style={{ display: 'block' }}
+                      onChange={(e) => {
+                        e.persist()
+                        const isChecked = (e.target as HTMLInputElement)
+                          .checked
+
+                        setpendingDeploy((prevState) => ({
+                          ...prevState,
+                          ...{ onlyShowProductionDeploys: isChecked },
+                        }))
+                      }}
+                      checked={pendingDeploy.onlyShowProductionDeploys}
+                    />
+                    <Box flex={1} paddingLeft={3}>
+                      <Text>
+                        <label htmlFor="onlyShowProductionDeploys">
+                          Only include Production deploys?
+                        </label>
+                      </Text>
+                    </Box>
+                  </Flex>
+                </Card>
+              </FormField>
+
+              <FormField>
+                <Card paddingY={3}>
+                  <Flex align="center">
+                    <Switch
                       id="disableDeleteAction"
                       style={{ display: 'block' }}
                       onChange={(e) => {
@@ -560,7 +597,11 @@ const DeployItem: React.FC<DeployItemProps> = ({
           onClose={() => setIsHistoryOpen(false)}
           width={2}
         >
-          <DeployHistory siteId={siteId} accessToken={accessToken} />
+          <DeployHistory
+            siteId={siteId}
+            accessToken={accessToken}
+            onlyShowProductionDeploys={onlyShowProductionDeploys}
+          />
         </Dialog>
       )}
     </>
