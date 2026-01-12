@@ -94,7 +94,7 @@ const DeployItem: React.FC<DeployItemProps> = ({
       accessToken,
       deploymentDataParam
     ],
-    fetcher,
+    ([url, token, params]) => fetcher(url, token, params),
     {
       errorRetryCount: 3,
       refreshInterval: 1000,
