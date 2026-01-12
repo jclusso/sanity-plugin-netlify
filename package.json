@@ -49,13 +49,13 @@
     "watch": "pkg-utils watch --strict"
   },
   "dependencies": {
-    "@sanity/icons": "^2.4.1",
+    "@sanity/icons": "^3.0.0",
     "@sanity/incompatible-plugin": "^1.0.4",
-    "@sanity/ui": "^1.0.14",
+    "@sanity/ui": "^2.0.0",
     "axios": "^1.6.0",
     "nanoid": "^3.1.20",
     "spacetime": "^6.16.0",
-    "swr": "^1.1.1"
+    "swr": "^2.0.0"
   },
   "devDependencies": {
     "@sanity/pkg-utils": "^2.2.3",
@@ -75,13 +75,13 @@
     "react-dom": "^18.2.0",
     "react-is": "^18.2.0",
     "rimraf": "^4.1.2",
-    "sanity": "^3.2.5",
+    "sanity": "^5.0.0",
     "styled-components": "^6.1.0",
     "typescript": "^4.9.4"
   },
   "peerDependencies": {
-    "react": "^18",
-    "sanity": "^3"
+    "react": "^18 || ^19",
+    "sanity": "^3 || ^5"
   },
   "engines": {
     "node": ">=14"
