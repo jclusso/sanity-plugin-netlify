@@ -20,9 +20,10 @@ import {
   ToastProvider,
   useToast,
 } from '@sanity/ui'
-import { FormField, useColorScheme } from 'sanity'
+import { useColorScheme } from 'sanity'
 
 import DeployItem from './deploy-item'
+import FormField from './form-field'
 import { useClient } from './hook/useClient'
 import type { SanityDeploySchema } from './types'
 import deployIcon from './netlify-icon'

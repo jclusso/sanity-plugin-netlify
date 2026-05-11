@@ -31,7 +31,7 @@ import {
   useToast,
 } from '@sanity/ui'
 
-import { FormField } from 'sanity'
+import FormField from './form-field'
 import DeployHistory from './deploy-history'
 import DeployStatus from './deploy-status'
 import { useClient } from './hook/useClient'
